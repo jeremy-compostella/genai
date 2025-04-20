@@ -1,0 +1,87 @@
+GenAI is an Emacs module designed to interface with Generative AI Model services. This module allows users to perform various text processing tasks directly within Emacs using AI-generated suggestions. These tasks include text correction, enhancement, summarization, commit message generation, code simplification, compilation error resolution, and more.
+* Features
+- *Text Interaction*: Users can interact with the AI model to correct, enhance, shrink, or expand text.
+- *Commit Message Generation*: Automatically generate detailed commit messages for Git changes using Magit integration.
+- *Document Interaction*: Generate summaries or answer questions based on document contents.
+- *Email Response*: AI-generated replies to emails within supported modes.
+- *Code Interaction*: Simplify, document, or fix code blocks using AI suggestions.
+- *Compilation buffer Interaction*: Fix compilation error at point.
+[[genai-code-demo.gif]]
+* Model Backend
+At the moment, only one backend is supported, and that is Google Gemini. The user's Gemini API key should be in your authentication source file, generally =~/.authinfo= or =~/.authinfo.gpg=.
+
+#+begin_src conf
+machine generativelanguage.googleapis.com password <gemini-api-key>
+#+end_src
+* Configuration
+To install =genai.el=, clone this repository to your local machine and add the following lines to your Emacs configuration:
+
+#+begin_src emacs-lisp
+  ;; GenAI
+  (add-to-list 'load-path "/path/to/emacs-genai")
+  (require 'genai-gemini)
+  (genai-mode)
+
+  ;; Add extra code and doc mode of interests
+  (add-to-list 'genai-code-mode-list 'kconfig-mode)
+  (add-to-list 'genai-doc-mode-list 'gnus-article-mode)
+#+end_src
+* Transient Entry Points
+The module employs transient commands to dynamically choose entry points based on the current major mode and customizable variables. Transient commands are a way to create temporary interactive menus that allow users to select options and execute commands with a single key press.
+** Entry Point Determination
+The main entry point is the =genai-entry= function (bound to =C-c g= by default), which determines the appropriate GenAI operation based on the current buffer's context or major mode:
+
+- *Commit Messages*: If the buffer is editing a commit message (=COMMIT_EDITMSG=), the =genai-commit-entry= transient is activated.
+- *Message Modes*: For modes listed in =genai-message-mode-list=, such as email editing modes, =genai-message-entry= is activated.
+- *Code Modes*: For modes listed in =genai-code-mode-list=, the =genai-entry-code-triage= function decides whether to call =genai-code-entry= or =genai-text-entry= based on the buffer context (comments vs. code).
+- *Document Modes*: For modes listed in =genai-doc-mode-list=, =genai-doc-entry= is activated.
+- *Compilation Modes*: Activated for =compilation-mode= buffers.
+** Customizable Transient Arguments
+Users can customize transient arguments and options to modify AI behavior:
+
+- *Generic Arguments*: These include options like editing system and user prompts, or deciding whether to replace original content.
+- *Text and Code Options*: These options allow users to expand acronyms, replace redundant words, and specify other text-related behaviors.
+
+Transient commands provide a dynamic and flexible interface, adapting to different contexts and user preferences.
+* GenAI Overlay Emacs Module
+The Emacs Overlay module, is designed to help users visually compare and distinguish between two versions of text within a single buffer. Overlays in Emacs are a powerful feature that allows for visual modifications to the text displayed in the editor without altering the actual text content stored in the file.
+
+Here's how the overlay system works in this module:
+
+1. *Visual Representation*: When you use overlays to compare two regions, the module highlights the differences such as deletions, additions, and modifications. This helps users to see what has changed between the old text (referred to as Region 'A') and the new text (referred to as Region 'B').
+
+2. *Transient Changes*: The changes displayed by the overlays are purely visual. The current text in the buffer represents the new version of the text. The original text (old version) is not stored in the file but is temporarily displayed via overlays. This means that any differences highlighted are not part of the file content; they are just there to guide your editing process.
+
+3. *Overlay Actions*:
+
+   - *Keeping Changes*: If you decide to keep the changes, the overlay is removed, solidifying the new text as the current content without further intervention.
+   - *Rejecting Changes*: If you reject the overlay changes, the original text (stored visually in the overlay) is inserted back into the buffer. This restores the old text to the current editing context.
+
+4. *User Interaction*: The module offers keybindings and interactive functions to navigate through these overlays, toggle their visibility, and choose to retain or reject the changes. This makes it easier for users to efficiently manage text differences.
+
+The overlay transient entry menu acts as the primary interface for engaging with overlays. It offers choices for navigating overlays, performing actions on them, and creating new comparisons. To open the transient menu, utilize the keyboard shortcut specified by =genai-overlay-entry-key=, which is set to ="C-c l"= by default. If the user is already navigating, they can directly use keys like =n= or =p=.
+
+Here's how you can effectively use these key bindings:
+
+1. *Entry Point* (=C-c l=): Access the overlay functionalities. You can press =C-c l= to open the transient menu, which offers navigation and action options related to text comparison overlays.
+2. *Navigation Keys*:
+   - =n=: Move to the next overlay. This key binding will navigate forward through the comparative overlays present in the buffer.
+   - =p=: Move to the previous overlay. This key binding navigates backward through the overlays.
+   - =c=: Cycle overlay visibility. This function toggles between three states of visibility: fully visible (both original and new text), original invisible (only new text visible), and new text invisible (only original text visible).
+3. *Action Keys*:
+   - =k=: Keep the change. This key deletes the overlays, effectively discarding the original text and keeping the new changes visible.
+   - =r=: Reject the change. This key restores the original text, deleting the new changes represented by the overlays.
+4. *Visibility Toggle*:
+5. *Comparison Setup*:
+   - =A=: Store the current region as Region A for comparison. This sets the selected region in the buffer as Region A, to be used later for comparison with another region.
+   - =B=: Compare the current region with the stored Region A. If you have stored a Region A, you can select another region (Region B) and use this key binding to compute and highlight the differences between these two regions.
+     When using these key bindings, ensure you have overlays active by selecting the appropriate regions and storing them for comparison.
+* Customizable Variables
+:PROPERTIES:
+:CUSTOM_ID: customizable-variables
+:END:
+The module provides several customizable variables to tailor its behavior:
+
+- *Prompts*: Customize the system prompts used for different tasks, such as text correction, code simplification, or commit message generation.
+- *Mode Lists*: Define which major modes should trigger specific GenAI capabilities, allowing users to specify document, message, and code modes.
+- *Overlay Settings*: Customize the key bindings for overlay interactions and the ratio of original text to hide when displaying changes.
