@@ -7,21 +7,40 @@ GenAI is an Emacs module designed to interface with Generative AI Model services
 - *Code Interaction*: Simplify, document, or fix code blocks using AI suggestions.
 - *Compilation buffer Interaction*: Fix compilation error at point.
 [[genai-code-demo.gif]]
-* Model Backend
-At the moment, only one backend is supported, and that is Google Gemini. The user's Gemini API key should be in your authentication source file, generally =~/.authinfo= or =~/.authinfo.gpg=.
+* Configuration and Model Backends
+To install =genai.el=, clone this repository to your local machine and select your backend. Two backends are natively supported.
+** [[https://ai.google.dev/gemini-api/docs][Google Gemini]]
+The user's Gemini API key should be in your authentication source file, generally =~/.authinfo= or =~/.authinfo.gpg=.
 
 #+begin_src conf
 machine generativelanguage.googleapis.com password <gemini-api-key>
 #+end_src
-* Configuration
-To install =genai.el=, clone this repository to your local machine and add the following lines to your Emacs configuration:
+
+Here is an example of how GenAI can be configured to use Google Gemini.
 
 #+begin_src emacs-lisp
   ;; GenAI
   (add-to-list 'load-path "/path/to/emacs-genai")
   (require 'genai-gemini)
   (genai-mode)
+#+end_src
+** [[https://openrouter.ai/][OpenRouter]]
+OpenRouter offers multiple [[https://openrouter.ai/models][models]] with various pricing, including free options. The user's OpenRouter key should be in your authentication source file, generally =~/.authinfo= or =~/.authinfo.gpg=.
 
+#+begin_src conf
+machine machine openrouter.ai password password <gemini-api-key>
+#+end_src
+
+Here is an example of how GenAI can be configured to use an OpenRouter model.
+
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "/path/to/emacs-genai")
+  (setq genai-openrouter-model "nvidia/llama-3.1-nemotron-nano-8b-v1:free")
+  (require 'genai-openrouter)
+  (genai-mode)
+#+end_src
+* Extra Configuration
+#+begin_src emacs-lisp
   ;; Add extra code and doc mode of interests
   (add-to-list 'genai-code-mode-list 'kconfig-mode)
   (add-to-list 'genai-doc-mode-list 'gnus-article-mode)
