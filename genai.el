@@ -76,7 +76,7 @@
 
 (defcustom genai-models '()
   "The list of available Generative AI model."
-  :type 'alist)
+  :type 'list)
 
 (defcustom genai-pandoc-command "pandoc"
   "The pandoc command to use to convert markdown to org-mode."
@@ -95,6 +95,7 @@ appended to the `genai-debug-log-buffer'."
 ;; Transient Arguments
 (defcustom genai-transient-generic-arguments
   ["Generic arguments:"
+   ("-f" genai--read-model)
    ("-m" genai--read-maximum-word-number)
    ("!r" "Do not replace the original content (append instead)"
     ("!r" "do-not-replace"))
@@ -278,7 +279,9 @@ a value."
   (if-let ((found (cl-find name (genai--arguments) :key #'car
 			   :test #'string=)))
       (if (cdr found)
-	  (string-to-number (cadr found))
+	  (cond ((string-match-p "^[0-9]+$" (cadr found))
+		 (string-to-number (cadr found)))
+		((cadr found)))
 	t)
     (when-let ((symb (intern-soft (concat "genai-" name))))
       (when (boundp symb)
@@ -295,7 +298,11 @@ a value."
 (defun genai-request (system-prompt user-prompt callback
 				    &optional model)
   "Ask a question to a Generative AI Model service."
-  (lexical-let ((model (or model (cdar genai-models))))
+  (lexical-let ((model (or (when-let ((name (genai--get-arg "model")))
+			     (cl-find name genai-models
+				      :key #'genai-model-name
+				      :test #'string=))
+			   model (car (last genai-models)))))
     (unless model
       (error "No available Generative AI model."))
     (setq genai-user-prompt-history (cons user-prompt
@@ -821,6 +828,18 @@ out the filename path is out of the ordinary."
   :argument "maximum-number-of-words="
   :allow-empty t
   :reader #'transient-read-number-N+)
+
+(defun genai--model-reader (prompt initial-input history)
+  "Select a generative AI model from the available models."
+  (completing-read prompt (mapcar #'genai-model-name genai-models)))
+
+(transient-define-argument genai--read-model ()
+  "Define a transient argument for selecting an alternative AI model."
+  :description "Force an alternative model (instead of default)"
+  :class 'transient-option
+  :argument "model="
+  :allow-empty t
+  :reader #'genai--model-reader)
 
 (transient-define-prefix genai-doc-entry ()
   "Defines a transient menu for doc-related actions using GenAI."

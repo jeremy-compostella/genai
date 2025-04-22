@@ -116,8 +116,7 @@ The key should be in your auth-source file and bound to the
 
 ;;;###autoload
 (add-to-list 'genai-models
-	     (cons '(code text doc commit message)
-		   (make-genai-model :name "Google Gemini"
-				     :request #'genai-gemini-request)))
+	     (make-genai-model :name "Google Gemini"
+			       :request #'genai-gemini-request))
 
 (provide 'genai-gemini)
