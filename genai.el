@@ -349,8 +349,12 @@ a value."
 	(when debug-log
 	  (genai-debug-log "System Prompt" system-prompt)
 	  (genai-debug-log "User Prompt" user-prompt))
-	(funcall (genai-model-request model) system-prompt user-prompt
-		 callback-wrapper error-callback-wrapper)))))
+	(condition-case err
+	    (funcall (genai-model-request model) system-prompt user-prompt
+		     callback-wrapper error-callback-wrapper)
+	  (error
+	   (cancel-timer update-timer)
+	   (error (cadr err))))))))
 
 ;;;###autoload
 (defun genai--org-mode-to-markdown (text)
