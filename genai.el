@@ -622,7 +622,7 @@ form."
 	 (change (with-current-buffer diff-buffer
 		   (buffer-string)))
 	 (context (genai--create-diff-context diff-buffer progress))
-	 (system-prompt genai-prompt-commit-message)
+	 (system-prompt)
 	 (rewrite nil)
 	 (original-message ""))
     (cl-flet ((add-to-prompt (&rest sequences)
@@ -631,6 +631,9 @@ form."
 					      sequences)))))
       (cl-multiple-value-bind (beg end)
 	  (genai--current-commit-message)
+	(add-to-prompt "\nConsider the following original files:\n"
+		       context)
+	(add-to-prompt  genai-prompt-commit-message)
 	(if beg
 	    (setf original-message
 		  (buffer-substring-no-properties beg end))
@@ -638,8 +641,6 @@ form."
 	(when genai-commit-insert-user-sign-off
 	  (add-to-prompt (format "\nInclude Signed-off-by tag for %s <%s>"
 				 user-full-name user-mail-address)))
-	(add-to-prompt "\nConsider the following original files:\n"
-		       context)
 	(progress-reporter-done progress)
 	(genai-request system-prompt
 		       (format "%s%s\n" original-message change)
