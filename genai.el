@@ -696,8 +696,7 @@ a question. The result is inserted at point."
 	(setf code data))
       (when (string-empty-p code)
 	(error "No code generated."))
-      (select-window (display-buffer (current-buffer)
-				     'display-buffer-use-some-window))
+      (select-window (display-buffer (current-buffer)))
       (if (and beg end)
 	  (genai--replace-with-differences beg end code)
 	(save-excursion
