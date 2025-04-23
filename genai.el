@@ -283,7 +283,7 @@ a value."
 		((cadr found)))
 	t)
     (when-let ((symb (intern-soft (concat "genai-" name))))
-      (when (boundp symb)
+      (when (and symb (boundp symb))
 	(symbol-value symb)))))
 
 (defun genai--acronym-extension-prompt ()
