@@ -303,7 +303,7 @@ a value."
 				      :test #'string=))
 			   model (car (last genai-models)))))
     (unless model
-      (error "No available Generative AI model."))
+      (error "No registered AI models, please configure genai-models."))
     (setq genai-user-prompt-history (cons user-prompt
 					  genai-user-prompt-history))
     (let ((max-words (genai--get-arg "maximum-number-of-words")))
