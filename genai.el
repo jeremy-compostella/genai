@@ -256,21 +256,20 @@ content to be logged, formatted as markdown."
 The function creates a temporary file with the markdown content and uses
 pandoc to convert the markdown content to org-mode. The function returns
 the org-mode content as string."
-  (if (executable-find genai-pandoc-command)
-      (let* ((tmp-md-file (make-temp-file "genai" nil ".md"))
-	     (tmp-org-file (concat tmp-md-file ".org")))
-	(with-temp-buffer
-	  (insert markdown)
-	  (write-file tmp-md-file))
-	(call-process genai-pandoc-command nil nil nil
-		      "-f" "markdown" "-t" "org"
-		      "--wrap=preserve" "-o" tmp-org-file tmp-md-file)
-	(with-temp-buffer
-	  (insert-file-contents-literally tmp-org-file)
-	  (buffer-string)))
-    (warn "genai: %s command not found on the system, mardown to\
- org-mode conversion aborted." genai-pandoc-command)
-    markdown))
+  (let* ((tmp-md-file (make-temp-file "genai" nil ".md"))
+	 (tmp-org-file (concat tmp-md-file ".org")))
+    (with-temp-buffer
+      (insert markdown)
+      (write-file tmp-md-file))
+    (let ((status (call-process genai-pandoc-command nil nil nil
+				"-f" "markdown" "-t" "org"
+				"--wrap=preserve" "-o" tmp-org-file
+				tmp-md-file)))
+      (if (= status 0)
+	  (with-temp-buffer
+	    (insert-file-contents-literally tmp-org-file)
+	    (buffer-string))
+	(error "genai: pandoc failed with status %d" status)))))
 
 (defun genai--get-arg (name)
   "Retrieves argument NAME from `genai--arguments' or falls back
