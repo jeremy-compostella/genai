@@ -380,7 +380,7 @@ a value."
     (setq-local fill-column fill-column-value)
     (insert text)
     (goto-char (point-max))
-    (dolist (tag '("BUG=" "TEST=" "Signed-off-by: Change-Id: "))
+    (dolist (tag '("BUG=" "TEST=" "Signed-off-by:" "Change-Id:"))
       (when (re-search-backward (concat "^" tag) nil t)
 	(forward-line -1)))
     (fill-region (point-min) (point))
