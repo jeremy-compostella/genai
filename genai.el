@@ -461,24 +461,23 @@ END - The ending marker in the buffer where text replacement should end.
 DATA - An alist containing the response data from the text generation
        service."
   (with-current-buffer (marker-buffer beg)
-    (let ((result data))
-      (when (eq major-mode 'text-mode)
-	(setf result (genai--extract-code-block result t))
-	(when strip-markdown
-	  (message "Strip markdown syntax")
-	  (setf result (genai--markdown-to-text result)))
-	(setf result (genai--fill-column-on-text result fill-column)))
-      (when (genai--org-modep)
-	(setf result (genai--markdown-to-org result)))
-      (let ((beg (marker-position beg))
-	    (end (marker-position end)))
-	(if (and beg end)
-	    (genai--replace-with-differences beg end result)
-	  (save-excursion
-	    (goto-char beg)
-	    (insert result)
-	    (when (pulse-available-p)
-	      (pulse-momentary-highlight-region beg (point)))))))))
+    (when (eq major-mode 'text-mode)
+      (setf data (genai--extract-code-block data t))
+      (when strip-markdown
+	(message "Strip markdown syntax")
+	(setf data (genai--markdown-to-text data)))
+      (setf data (genai--fill-column-on-text data fill-column)))
+    (when (genai--org-modep)
+      (setf data (genai--markdown-to-org data)))
+    (let ((beg (marker-position beg))
+	  (end (marker-position end)))
+      (if (and beg end)
+	  (genai--replace-with-differences beg end data)
+	(save-excursion
+	  (goto-char beg)
+	  (insert data)
+	  (when (pulse-available-p)
+	    (pulse-momentary-highlight-region beg (point))))))))
 
 (defun genai--get-current-text-region ()
   "Retrieve text either from the selected region or from the
