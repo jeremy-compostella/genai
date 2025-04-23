@@ -95,7 +95,7 @@ appended to the `genai-debug-log-buffer'."
 ;; Transient Arguments
 (defcustom genai-transient-generic-arguments
   ["Generic arguments:"
-   ("-f" genai--read-model)
+   ("-M" genai--read-model)
    ("-m" genai--read-maximum-word-number)
    ("!r" "Do not replace the original content (append instead)"
     ("!r" "do-not-replace"))
