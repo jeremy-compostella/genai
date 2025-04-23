@@ -446,25 +446,21 @@ The function removes specific markdown syntax elements."
           (replace-match ""))))
     (buffer-string)))
 
-(defun genai-text-callback (buffer strip-markdown beg end data)
+(defun genai-text-callback (strip-markdown beg end data)
   "Handles GenAI text generation responses.
 
 This function is designed to be called with the response from an
-asynchronous text generation service. It inserts or replaces text in a
-specified BUFFER.
+asynchronous text generation service. It inserts or replaces text.
 
 Arguments:
-BUFFER - The buffer in which to insert or replace the text.
-BEG - The beginning position in the buffer where text replacement should
-      start.  If BEG is nil, the function will simply insert text at the
-      current point.
-END - The ending position in the buffer where text replacement should
-      end.  If END is nil, and BEG is also nil, the function will simply
+BEG - The beginning marker where text replacement should start.  If BEG
+      is nil, the function will simply insert text at the current point.
+END - The ending marker in the buffer where text replacement should end.
+      If END is nil, and BEG is also nil, the function will simply
       insert text.
 DATA - An alist containing the response data from the text generation
-       service.  It is expected to contain a key 'currentResponse' which
-       holds the generated text to be inserted."
-  (with-current-buffer buffer
+       service."
+  (with-current-buffer (marker-buffer beg)
     (let ((result data))
       (when (eq major-mode 'text-mode)
 	(setf result (genai--extract-code-block result t))
@@ -474,13 +470,15 @@ DATA - An alist containing the response data from the text generation
 	(setf result (genai--fill-column-on-text result fill-column)))
       (when (genai--org-modep)
 	(setf result (genai--markdown-to-org result)))
-      (if (and beg end)
-	  (genai--replace-with-differences beg end result)
-	(save-excursion
-	  (goto-char beg)
-	  (insert result)
-	  (when (pulse-available-p)
-	    (pulse-momentary-highlight-region beg (point))))))))
+      (let ((beg (marker-position beg))
+	    (end (marker-position end)))
+	(if (and beg end)
+	    (genai--replace-with-differences beg end result)
+	  (save-excursion
+	    (goto-char beg)
+	    (insert result)
+	    (when (pulse-available-p)
+	      (pulse-momentary-highlight-region beg (point)))))))))
 
 (defun genai--get-current-text-region ()
   "Retrieve text either from the selected region or from the
@@ -512,8 +510,9 @@ current paragraph if no region is active."
 
 (defun genai--prep-text-callback (beg end)
   "Generate the text callback function."
-  (apply-partially #'genai-text-callback (current-buffer)
-		   (genai--get-arg "strip-markdown") beg end))
+  (apply-partially #'genai-text-callback
+		   (genai--get-arg "strip-markdown")
+		   (copy-marker beg) (copy-marker end)))
 
 (defun genai-enhance-text (text beg end &optional extra-system-prompt)
   "Rewrite existing text. When a region is active, the selected
@@ -689,22 +688,24 @@ a question. The result is inserted at point."
 			      genai-maximum-number-of-words)
 			     nil)))
 
-(defun genai-code-callback (buffer beg end data)
+(defun genai-code-callback (beg end data)
   "Handles code generation responses from GenAI."
-  (with-current-buffer buffer
+  (with-current-buffer (marker-buffer beg)
     (let* ((code (genai--extract-code-block data)))
       (unless code
 	(setf code data))
       (when (string-empty-p code)
 	(error "No code generated."))
       (select-window (display-buffer (current-buffer)))
-      (if (and beg end)
-	  (genai--replace-with-differences beg end code)
-	(save-excursion
-	  (goto-char beg)
-	  (indent-region beg (point))
-	  (when (pulse-available-p)
-	    (pulse-momentary-highlight-region beg (point))))))))
+      (let ((beg (marker-position beg))
+	    (end (marker-position end)))
+	(if (and beg end)
+	    (genai--replace-with-differences beg end code)
+	  (save-excursion
+	    (goto-char beg)
+	    (indent-region beg (point))
+	    (when (pulse-available-p)
+	      (pulse-momentary-highlight-region beg (point)))))))))
 
 (defun genai--get-current-code-region ()
   "Retrieve the current code region from the buffer.
@@ -726,14 +727,14 @@ it along with its beginning and end positions."
                (end (region-end))
                (code (buffer-substring-no-properties beg end)))
           (deactivate-mark)
-          (list (format-code code) beg end))
+          (list (format-code code) (copy-marker beg) (copy-marker end)))
       (save-excursion
 	(beginning-of-defun)
 	(let ((beg (point)))
           (end-of-defun)
           (list (format-code
 		 (buffer-substring-no-properties beg (point)))
-                beg (point)))))))
+                (copy-marker beg) (point-marker)))))))
 
 (defun genai--git-diff (default-directory)
   "Generate a Git diff for the given DIRECTORY."
@@ -766,8 +767,7 @@ it along with its beginning and end positions."
 		   (concat "Here is the code we want a replacement\
  for:\n"
 		       code)
-		   (apply-partially #'genai-code-callback
-				    (current-buffer) beg end))))
+		   (apply-partially #'genai-code-callback beg end))))
 
 (defun genai-simplify-code (code beg end)
   "Replace CODE with a simplified version."
