@@ -679,13 +679,6 @@ a question. The result is inserted at point."
   (genai-request system-prompt user-prompt
 		 (genai--prep-text-callback (point) nil)))
 
-(defun genai--read-maximum-word-number (prompt default-time _history)
-  (string-to-number
-   (transient-read-number-N+ "Maximum number of words to generate: "
-			     (number-to-string
-			      genai-maximum-number-of-words)
-			     nil)))
-
 (defun genai-code-callback (beg end data)
   "Handles code generation responses from GenAI."
   (with-current-buffer (marker-buffer beg)
