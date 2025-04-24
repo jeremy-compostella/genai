@@ -72,19 +72,19 @@
 (defstruct genai-model
   "Generative AI model data structure."
   (name "Name of the model.")
-  (request "Function to place a request the model."))
+  (request "Function to place a request to the model."))
 
 (defcustom genai-models '()
   "The list of available Generative AI model."
   :type 'list)
 
 (defcustom genai-pandoc-command "pandoc"
-  "The pandoc command to use to convert markdown to org-mode."
+  "The pandoc command to use to convert Markdown to Org mode."
   :type 'string)
 
 ;; Debug
 (defcustom genai-debug-log-buffer "*genai-logs*"
-  "The name of the buffer to log debug information."
+  "The name of the buffer to log debug information to."
   :type 'string)
 
 (defcustom genai-debug-log nil
