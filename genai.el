@@ -390,16 +390,16 @@ a value."
 highlight differences."
   (let ((save-point (point)))
     (goto-char orig-end)
-    (let ((newline (= (line-beginning-position) (line-end-position)))
+    (let ((newline (= (line-beginning-position) (point)))
 	  (beg (point)))
       (insert new-text)
+      (if newline
+	  (when (not (= (line-beginning-position) (point)))
+	    (insert "\n"))
+	(when (= (line-beginning-position) (point))
+	  (delete-char -1)))
       (genai--overlay-compare-regions orig-beg orig-end orig-end (point))
       (let ((end (point)))
-	(if newline
-	    (when (not (= (line-beginning-position) (line-end-position)))
-	      (insert "\n"))
-	  (when (= (line-beginning-position) (line-end-position))
-	    (delete-char -1)))
 	(when (pulse-available-p)
 	  (when-let ((overlays (genai--overlays beg end)))
 	    (let ((beg (overlay-start (car overlays)))
