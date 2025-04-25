@@ -8,7 +8,7 @@ GenAI is an Emacs module designed to interface with Generative AI Model services
 - *Compilation buffer Interaction*: Fix compilation error at point.
 [[genai-code-demo.gif]]
 * Configuration and Model Backends
-To install =genai.el=, clone this repository to your local machine and select your backend. Two backends are natively supported.
+To install =genai.el=, clone this repository to your local machine and select your backend. Two backends are natively supported, but many can be added with little work.
 ** [[https://ai.google.dev/gemini-api/docs][Google Gemini]]
 The user's Gemini API key should be in your authentication source file, generally =~/.authinfo= or =~/.authinfo.gpg=.
 
