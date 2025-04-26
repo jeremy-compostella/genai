@@ -63,6 +63,7 @@
 (require 'cl)
 (require 'cl-lib)
 (require 'genai-overlay)
+(require 'git-commit)
 (require 'magit)
 (require 'org)
 (require 'pulse)
@@ -140,18 +141,47 @@ appended to the `genai-debug-log-buffer'."
   "Text arguments for the GenAI transient.")
 
 ;; Commit message
-(defcustom genai-prompt-commit-message "As an experienced developer,\
- write a detailed commit message at the present tense. Include a title\
- line limited to 72 characters. Include information about the issue\
- being addressed. Do not include a diff statistic. Do not add any\
- header or footer to the generated text. Copy tags such as `BUG=...`\
- and `TEST=...` as-is if already present."
+(defcustom genai-prompt-commit-message
+  "You are an expert software developer tasked with generating a clear,\
+ concise, and informative commit message for the following changes to\
+ %s. The goal is to produce a message that adheres to best\
+ practices and provides sufficient context for other developers to\
+ understand the purpose and impact of the commit.
+
+Context:
+
+- Original Files: See the attached %s files.
+- Diff: At the end of the prompt
+
+Instructions:
+1. Analyze the Diff: Carefully examine the provided diff. Identify the\
+ core changes, paying attention to:
+   - Bug fixes
+   - Feature additions or modifications
+   - Refactoring or code improvements
+   - Configuration changes
+2. Craft the Commit Message:
+   - Title Line (%d characters max): Start with a concise and\
+ descriptive title that summarizes the main change. Use imperative\
+ mood (e.g.,\"Fix...\", \"Add...\", \"Refactor...\").
+   - Body: Provide a more detailed explanation of why the change was\
+ made. Address the following questions:
+     - What problem does this commit solve?
+     - What is the impact of this commit?
+     - What were the key decisions made during the implementation?
+     - If it's a bug fix, briefly describe the bug.
+     - If it's a refactoring, explain the motivation and the benefits.
+   - Technical details: Briefly explain the technical changes that were\
+ made.
+   - Tags: Copy any existing tags (e.g., BUG=..., TEST=...) as-is.
+   - Signed-off-by: Include a Signed-off-by: tag for %s <%s>.
+3. Adherence to Style:
+   - Use the present tense.
+   - Omit diff statistics, headers, and footers.
+   - Ensure proper grammar and spelling.
+   - Format the message for readability."
   "System prompt to be used when writing a commit message."
   :type 'string)
-
-(defcustom genai-commit-insert-user-sign-off t
-  "Whether to insert a user Signed-off-by in the commit message."
-  :type 'boolean)
 
 ;; Document
 (defcustom genai-prompt-summary "As an educated technical engineer,\
@@ -591,10 +621,8 @@ message is found."
 	(process-file "git" nil t nil "show" (concat "HEAD:" file)))
       (buffer-substring-no-properties (point-min) (point-max)))))
 
-(defun genai--create-diff-context (buffer progress)
-  "Create a diff context for the given change."
-  (let ((files '())
-	(directory default-directory))
+(defun genai--context-files (buffer)
+  (let ((files '()))
     (with-current-buffer buffer
       (goto-char (point-max))
       (while (re-search-backward "^modified " nil t)
@@ -602,8 +630,7 @@ message is found."
       (while (not (= (point) (point-min)))
 	(setf files (cons (magit-diff--file-at-point) files))
 	(forward-line -1))
-      (setf files (cl-delete-if-not #'stringp files)))
-    (genai--create-files-context files directory progress)))
+      (cl-delete-if-not #'stringp files))))
 
 (defun genai-insert-commit-message ()
   "Generate detailed Git commit messages.
@@ -617,27 +644,31 @@ form."
 	 (diff-buffer (save-window-excursion
 			(magit-diff-while-committing)))
 	 (change (with-current-buffer diff-buffer
-		   (buffer-string)))
-	 (context (genai--create-diff-context diff-buffer progress))
+		   (goto-char (point-max))
+		   (forward-line -1)
+		   (buffer-substring (point-min) (point))))
+	 (files (genai--context-files diff-buffer))
+	 (context (genai--create-files-context files default-directory
+					       progress))
 	 (system-prompt)
 	 (rewrite nil)
 	 (original-message ""))
     (cl-flet ((add-to-prompt (&rest sequences)
 		(setf system-prompt
 		      (apply #'concat (append (list system-prompt)
-					      sequences)))))
+					      sequences '("\n"))))))
       (cl-multiple-value-bind (beg end)
 	  (genai--current-commit-message)
-	(add-to-prompt "\nConsider the following original files:\n"
-		       context)
-	(add-to-prompt  genai-prompt-commit-message)
+	(add-to-prompt (format genai-prompt-commit-message
+			       (mapconcat 'identity files ", ")
+			       (mapconcat 'identity files ", ")
+			       git-commit-summary-max-length
+			       user-full-name user-mail-address))
+	(add-to-prompt context)
 	(if beg
 	    (setf original-message
 		  (buffer-substring-no-properties beg end))
 	  (setf beg (point-min)))
-	(when genai-commit-insert-user-sign-off
-	  (add-to-prompt (format "\nInclude Signed-off-by tag for %s <%s>"
-				 user-full-name user-mail-address)))
 	(progress-reporter-done progress)
 	(genai-request system-prompt
 		       (format "%s%s\n" original-message change)
