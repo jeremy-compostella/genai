@@ -625,7 +625,7 @@ message is found."
   (let ((files '()))
     (with-current-buffer buffer
       (goto-char (point-max))
-      (while (re-search-backward "^modified " nil t)
+      (while (re-search-backward "^\\(modified\\|new file\\) " nil t)
 	(forward-line -1))
       (while (not (= (point) (point-min)))
 	(setf files (cons (magit-diff--file-at-point) files))
