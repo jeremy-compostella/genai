@@ -318,8 +318,9 @@ a value."
 
 (defun genai--acronym-extension-prompt ()
   "Return the prompt to extend acronyms."
-  (concat " Add the full name of used acronyms, keep the acronym in\
- parentheses, and here is a list of acronyms to consider:"
+  (concat " Add the full name of a used acronyms the first time you\
+ encounter it, keep the acronym in parentheses, and here is a list of\
+ acronyms to consider:"
 	  (mapconcat (lambda (x) (concat (car x) "=" (cdr x)))
 		     genai-acronyms-alist ", ")
 	  "."))
