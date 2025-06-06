@@ -212,8 +212,8 @@ Instructions:
   :type 'string)
 
 (defcustom genai-prompt-document-code "Provide a replacement for this\
- code with inline documentation."
-  "System prompt to be used when documenting code."
+ code with a docstring."
+  "System prompt to be used when adding a documentation string."
   :type 'string)
 
 (defcustom genai-prompt-fix-code "Provide a fixed version of the\
