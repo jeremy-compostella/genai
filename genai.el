@@ -492,7 +492,7 @@ END - The ending marker in the buffer where text replacement should end.
 DATA - An alist containing the response data from the text generation
        service."
   (with-current-buffer (marker-buffer beg)
-    (when (eq major-mode 'text-mode)
+    (when (genai--is-in-commit-message-buffer)
       (setf data (genai--extract-code-block data t))
       (when strip-markdown
 	(message "Strip markdown syntax")
