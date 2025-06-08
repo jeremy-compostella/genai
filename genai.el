@@ -820,6 +820,11 @@ it along with its beginning and end positions."
 					  genai-prompt-refactor-code))))
   (genai--modify-code code beg end instructions))
 
+(defun genai-generate-code-at-point (instructions)
+  (interactive (append (list (read-string "Instructions: "))))
+  (let ((marker (point-marker)))
+    (genai--modify-code "" marker marker instructions)))
+
 (defun genai--compile-error-location ()
   "Return the location of the file being compiled.
 
@@ -896,7 +901,8 @@ out the filename path is out of the ordinary."
    ("s" "Simplify" genai-simplify-code)
    ("d" "Document" genai-document-code)
    ("c" "Complete" genai-complete-code)
-   ("r" "Refactor" genai-refactor-code)]
+   ("r" "Refactor" genai-refactor-code)
+   ("g" "Generate code at point" genai-generate-code-at-point)]
   (interactive)
   (transient-setup 'genai-code-entry))
 
