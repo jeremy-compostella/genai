@@ -66,6 +66,7 @@
 (require 'git-commit)
 (require 'magit)
 (require 'org)
+(require 'ox)
 (require 'pulse)
 (require 'transient)
 
