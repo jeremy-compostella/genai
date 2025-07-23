@@ -425,6 +425,15 @@ highlight differences."
     (let ((newline (= (line-beginning-position) (point)))
 	  (beg (point)))
       (insert new-text)
+      ;; Some generative AI models are not good at keeping the coding style so
+      ;; let's re-indent the code.
+      (when (memq major-mode genai-code-mode-list)
+	(let ((end (point-marker)))
+	  (goto-char beg)
+	  (while (re-search-forward "^[ \t]+" end t)
+	    (replace-match ""))
+	  (indent-region beg end)
+	  (goto-char end)))
       (if newline
 	  (when (not (= (line-beginning-position) (point)))
 	    (insert "\n"))
