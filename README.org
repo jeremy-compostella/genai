@@ -39,6 +39,14 @@ Here is an example of how GenAI can be configured to use an OpenRouter model.
   (require 'genai-openrouter)
   (genai-mode)
 #+end_src
+** [[https://github.com/features/copilot][Github Copilot]]
+First, the  [[https://github.com/chep/copilot-chat.el][copilot-chat]] Emacs module must be properly configured. Then, GitHub Copilot can be loaded as the primary backend as follows:
+
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "/path/to/emacs-genai")
+  (require 'genai-github)
+  (genai-mode)
+#+end_src
 * Extra Configuration
 #+begin_src emacs-lisp
   ;; Add extra code and doc mode of interests
